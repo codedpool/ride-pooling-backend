@@ -62,49 +62,60 @@ A production-ready backend API for airport ride pooling that:
 
 ## 📁 Project Structure
 
+
 ```
 ride-pooling-backend/
 ├── src/
+│   ├── app.js
 │   ├── config/
-│   │   └── database.js           # DB connection pool
+│   │   ├── database.js
+│   │   └── redis.js
 │   ├── controllers/
-│   │   ├── rideController.js     # Ride endpoints
-│   │   └── cabController.js      # Cab endpoints
+│   │   ├── cabController.js
+│   │   └── rideController.js
+│   ├── middleware/
+│   │   ├── cacheMiddleware.js
+│   │   ├── errorHandler.js
+│   │   └── validator.js
 │   ├── models/
-│   │   ├── User.js
+│   │   ├── Booking.js
 │   │   ├── Cab.js
 │   │   ├── Ride.js
-│   │   └── Booking.js
-│   ├── services/
-│   │   ├── matchingService.js    # Matching algorithm
-│   │   ├── pricingService.js     # Pricing logic
-│   │   └── concurrencyService.js # Transaction mgmt
+│   │   └── User.js
 │   ├── routes/
-│   │   ├── rideRoutes.js
-│   │   └── cabRoutes.js
-│   ├── middleware/
-│   │   ├── errorHandler.js
-│   │   └── cacheMiddleware.js
+│   │   ├── cabRoutes.js
+│   │   └── rideRoutes.js
+│   ├── services/
+│   │   ├── concurrencyService.js
+│   │   ├── matchingService.js
+│   │   └── pricingService.js
 │   └── utils/
-│       ├── geoUtils.js           # Distance calculations
+│       ├── geoUtils.js
 │       └── logger.js
 ├── scripts/
-│   ├── create-load-test-data.js  # Seed test data
-│   ├── load-test.js              # Performance test
-│   └── init.sql                  # Database schema
+│   ├── create-load-test-data.js
+│   ├── create-realistic-rides.js
+│   ├── edge-case-tests.js
+│   ├── init.sql
+│   ├── load-test.js
+│   ├── realistic-load-test.js
+│   ├── run-all-tests.js
+│   ├── scenario-tests.js
+│   └── seed.js
 ├── docs/
-│   ├── API_DOCUMENTATION.md
+│   ├── API_DOCUMENTATION.MD
+│   ├── CONCURRENCY_STRATEGY.MD
 │   ├── DSA_AND_COMPLEXITY_ANALYSIS.md
-│   ├── LOW_LEVEL_DESIGN.md
-│   ├── HIGH_LEVEL_ARCHITECTURE.md
-│   ├── CONCURRENCY_STRATEGY.md
 │   ├── DYNAMIC_PRICING.md
+│   ├── HIGH_LEVEL_DESIGN.MD
+│   ├── LOW_LEVEL_DESIGN.MD
 │   └── PERFORMANCE_REPORT.md
 ├── docker-compose.yml
 ├── .env.example
 ├── .gitignore
 ├── package.json
-└── README.md
+├── README.md
+└── QUICK_START.md
 ```
 
 ---
