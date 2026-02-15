@@ -49,7 +49,7 @@ class ConcurrencyService {
       logger.error('Booking failed, transaction rolled back', error);
       throw error;
     } finally {
-      client.release();
+      client.release(); // Changed back to release()
     }
   }
 
@@ -97,7 +97,7 @@ class ConcurrencyService {
       logger.error('Cancellation failed', error);
       throw error;
     } finally {
-      await client.end(); // Changed from client.release()
+      client.release(); // Changed back to release()
     }
   }
 }

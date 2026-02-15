@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const { getCachedRides, setCachedRides } = require('../middleware/cacheMiddleware');
 
 class Ride {
   static async create(cabId) {
@@ -18,28 +19,57 @@ class Ride {
     return result.rows[0];
   }
 
-   static async findActiveRides() {
+  static async findActiveRides() {
+    // Check cache first
+    const cached = getCachedRides();
+    if (cached) {
+      console.log(`🎯 Using cached rides (${cached.length} rides)`);
+      return cached;
+    }
+
     const query = `
-      SELECT r.*, 
-             c.driver_name, c.vehicle_number,
-             ST_X(c.current_location::geometry) as cab_lon,
-             ST_Y(c.current_location::geometry) as cab_lat
+      SELECT 
+        r.id,
+        r.cab_id,
+        r.status,
+        r.available_seats,
+        r.available_luggage,
+        r.pickup_lat,
+        r.pickup_lon,
+        r.dropoff_lat,
+        r.dropoff_lon,
+        r.total_distance,
+        r.current_fare,
+        r.version,
+        r.created_at,
+        c.driver_name, 
+        c.vehicle_number,
+        ST_X(c.current_location::geometry) as cab_lon,
+        ST_Y(c.current_location::geometry) as cab_lat
       FROM rides r
       JOIN cabs c ON r.cab_id = c.id
-      WHERE r.status = 'active' AND r.available_seats > 0
+      WHERE r.status = 'active' 
+        AND r.available_seats > 0
+        AND r.pickup_lat IS NOT NULL
+        AND r.pickup_lon IS NOT NULL
+        AND r.dropoff_lat IS NOT NULL
+        AND r.dropoff_lon IS NOT NULL
       ORDER BY r.created_at DESC
     `;
     
     try {
       const result = await db.query(query);
-      console.log(`✅ Found ${result.rows.length} active rides`);
+      console.log(`✅ Found ${result.rows.length} active rides (from DB)`);
+      
+      // Cache the results for 2 seconds
+      setCachedRides(result.rows);
+      
       return result.rows;
     } catch (error) {
       console.error('❌ Error fetching rides:', error.message);
       throw error;
     }
   }
-
 
   static async lockAndUpdate(rideId, seatsToBook, luggageToBook, client) {
     // Lock the row for update (prevents race conditions)
@@ -75,6 +105,11 @@ class Ride {
       RETURNING *
     `;
     const result = await client.query(updateQuery, [rideId, seatsToBook, luggageToBook]);
+    
+    // Clear cache after update
+    const { clearRidesCache } = require('../middleware/cacheMiddleware');
+    clearRidesCache();
+    
     return result.rows[0];
   }
 }
