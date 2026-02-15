@@ -22,6 +22,12 @@ app.get('/health', (req, res) => {
   });
 });
 
+
+if (process.env.NODE_ENV !== 'production') {
+  const testRoutes = require('./routes/testRoutes');
+  app.use('/api/test', testRoutes);
+}
+
 app.use('/api/rides', rideRoutes);
 app.use('/api/cabs', cabRoutes);
 app.use(errorHandler);

@@ -14,6 +14,14 @@ class RideController {
     try {
       const { userId, pickupLat, pickupLon, dropoffLat, dropoffLon, luggageCount } = req.body;
 
+      // ADD THIS VALIDATION:
+      if (pickupLat === dropoffLat && pickupLon === dropoffLon) {
+        return res.status(400).json({
+          success: false,
+          error: 'Pickup and dropoff locations cannot be the same'
+        });
+      }
+
       // Parallel operations: user validation + distance calculation + matching
       const [user, distance, match] = await Promise.all([
         User.findById(userId),

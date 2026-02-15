@@ -1,0 +1,178 @@
+{
+  "info": {
+    "name": "Airport Ride Pooling API",
+    "description": "Complete API collection for ride pooling backend system",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/health",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["health"]
+        },
+        "description": "Check if API is running"
+      }
+    },
+    {
+      "name": "Book Ride",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"452ef1bf-8064-4882-8071-c85cc4d3cb63\",\n  \"pickupLat\": 28.5565,\n  \"pickupLon\": 77.1005,\n  \"dropoffLat\": 28.6565,\n  \"dropoffLon\": 77.2005,\n  \"luggageCount\": 1\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/rides/book",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "rides", "book"]
+        },
+        "description": "Book a pooled ride"
+      }
+    },
+    {
+      "name": "Get Booking Status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/rides/booking/:bookingId",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "rides", "booking", ":bookingId"],
+          "variable": [
+            {
+              "key": "bookingId",
+              "value": "",
+              "description": "Booking UUID from previous booking"
+            }
+          ]
+        },
+        "description": "Get status of a specific booking"
+      }
+    },
+    {
+      "name": "Cancel Booking",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/rides/booking/:bookingId",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "rides", "booking", ":bookingId"],
+          "variable": [
+            {
+              "key": "bookingId",
+              "value": "",
+              "description": "Booking UUID to cancel"
+            }
+          ]
+        },
+        "description": "Cancel an existing booking"
+      }
+    },
+    {
+      "name": "Get All Active Rides",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/rides",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "rides"]
+        },
+        "description": "Retrieve all active rides with available capacity"
+      }
+    },
+    {
+      "name": "Get All Cabs",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/cabs",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "cabs"]
+        },
+        "description": "Get list of all registered cabs"
+      }
+    },
+    {
+      "name": "Get Cab by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/cabs/:cabId",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "cabs", ":cabId"],
+          "variable": [
+            {
+              "key": "cabId",
+              "value": "",
+              "description": "Cab UUID"
+            }
+          ]
+        },
+        "description": "Get details of a specific cab"
+      }
+    },
+    {
+      "name": "Update Cab Location",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"lat\": 28.5565,\n  \"lon\": 77.1005\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/cabs/:cabId/location",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "cabs", ":cabId", "location"],
+          "variable": [
+            {
+              "key": "cabId",
+              "value": "",
+              "description": "Cab UUID"
+            }
+          ]
+        },
+        "description": "Update current GPS location of a cab"
+      }
+    }
+  ]
+}

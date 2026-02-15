@@ -84,6 +84,23 @@ class CabController {
       next(error);
     }
   }
+
+  /**
+   * GET /api/cabs
+   * Get all cabs
+   */
+  static async getAllCabs(req, res, next) {
+    try {
+      const cabs = await Cab.findAll();
+      logger.info('Retrieved all cabs', { count: cabs.length });
+      res.json({
+        success: true,
+        data: cabs
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = CabController;

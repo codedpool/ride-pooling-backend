@@ -15,4 +15,7 @@ router.post('/cancel/:id', uuidValidation, RideController.cancelBooking);
 // Get all active rides
 router.get('/', RideController.getAllRides);
 
+router.get('/booking/:id', RideController.getBookingStatus);
+router.delete('/booking/:id', RideController.cancelBooking);
+
 module.exports = router;

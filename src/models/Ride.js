@@ -2,6 +2,20 @@ const db = require('../config/database');
 const { getCachedRides, setCachedRides } = require('../middleware/cacheMiddleware');
 
 class Ride {
+    /**
+     * Return capacity to ride when booking is cancelled
+     */
+    static async returnCapacity(rideId, seats, luggage) {
+      const query = `
+        UPDATE rides
+        SET available_seats = available_seats + $2,
+            available_luggage = available_luggage + $3
+        WHERE id = $1
+        RETURNING *
+      `;
+      const result = await db.query(query, [rideId, seats, luggage]);
+      return result.rows[0];
+    }
   static async create(cabId) {
     const query = `
       INSERT INTO rides (cab_id, status, available_seats, available_luggage)

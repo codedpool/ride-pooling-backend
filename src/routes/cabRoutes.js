@@ -3,6 +3,9 @@ const router = express.Router();
 const CabController = require('../controllers/cabController');
 const { cabValidation, uuidValidation } = require('../middleware/validator');
 
+//Get all cabs
+router.get('/', CabController.getAllCabs);
+
 // Register a new cab
 router.post('/register', cabValidation, CabController.registerCab);
 
