@@ -1,5 +1,5 @@
 
-# Performance Report & Benchmarks
+# |Performance Report & Benchmarks|
 
 ---
 
