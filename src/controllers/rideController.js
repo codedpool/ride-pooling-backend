@@ -14,31 +14,31 @@ class RideController {
     try {
       const { userId, pickupLat, pickupLon, dropoffLat, dropoffLon, luggageCount } = req.body;
 
-      logger.info('Booking request received', { userId, pickupLat, pickupLon });
+      // Parallel operations: user validation + distance calculation + matching
+      const [user, distance, match] = await Promise.all([
+        User.findById(userId),
+        Promise.resolve(calculateDistance(pickupLat, pickupLon, dropoffLat, dropoffLon)),
+        MatchingService.findBestMatch({ pickupLat, pickupLon, dropoffLat, dropoffLon, luggageCount })
+      ]);
 
-      const user = await User.findById(userId);
       if (!user) {
         return res.status(404).json({ success: false, error: 'User not found' });
       }
-
-      const match = await MatchingService.findBestMatch({
-        pickupLat, pickupLon, dropoffLat, dropoffLon, luggageCount
-      });
 
       if (!match) {
         return res.status(404).json({ success: false, error: 'No available cabs found' });
       }
 
-      const distance = calculateDistance(pickupLat, pickupLon, dropoffLat, dropoffLon);
+      // Calculate pricing (fast, no I/O)
       const pricing = await PricingService.calculateFare(distance, pickupLat, pickupLon);
 
+      // Book with lock
       const result = await ConcurrencyService.bookRideWithLock(
         userId, match.ride.id, pickupLat, pickupLon, dropoffLat, dropoffLon,
         luggageCount, pricing.fare, match.detourDistance
       );
 
       const responseTime = Date.now() - startTime;
-      logger.info(`Booking completed in ${responseTime}ms`);
 
       res.status(201).json({
         success: true,

@@ -5,15 +5,18 @@ services:
     image: postgis/postgis:15-3.3
     container_name: ride_pooling_db
     environment:
-      POSTGRES_USER: pooluser
-      POSTGRES_PASSWORD: poolpass
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
       POSTGRES_DB: ridepooling
     ports:
-      - "5432:5432"
+      - "5433:5432"  # Changed to 5433 to avoid conflict with your pgAdmin PostgreSQL
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
     restart: always
+    command: >
+      postgres
+      -c max_connections=200
+      -c shared_buffers=256MB
 
   redis:
     image: redis:7-alpine
@@ -21,22 +24,6 @@ services:
     ports:
       - "6379:6379"
     restart: always
-
-  app:
-    build: .
-    container_name: ride_pooling_app
-    environment:
-      NODE_ENV: production
-      DATABASE_URL: postgres://pooluser:poolpass@postgres:5432/ridepooling
-      REDIS_URL: redis://redis:6379
-      PORT: 3000
-    ports:
-      - "3000:3000"
-    depends_on:
-      - postgres
-      - redis
-    restart: always
-    command: npm start
 
 volumes:
   postgres_data:
