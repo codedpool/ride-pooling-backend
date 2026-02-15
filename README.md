@@ -201,7 +201,7 @@ curl http://localhost:3000/api/rides
 
 ## 📚 API Documentation
 
-See [API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md) for detailed endpoint specifications.
+See [API_DOCUMENTATION.MD](docs/API_DOCUMENTATION.MD) for detailed endpoint specifications.
 
 ---
 
@@ -311,7 +311,7 @@ See [DSA_AND_COMPLEXITY_ANALYSIS.md](docs/DSA_AND_COMPLEXITY_ANALYSIS.md) for de
 
 **Result:** Zero double-bookings under 50 concurrent users (tested)
 
-See [CONCURRENCY_STRATEGY.md](docs/CONCURRENCY_STRATEGY.md) for details.
+See [CONCURRENCY_STRATEGY.MD](docs/CONCURRENCY_STRATEGY.MD) for details.
 
 ---
 
@@ -375,7 +375,7 @@ cabs (id, driver_name, vehicle_number, location)
 - Strategy (Caching strategies)
 - Middleware/Chain of Responsibility (Request pipeline)
 
-See [LOW_LEVEL_DESIGN.md](docs/LOW_LEVEL_DESIGN.md) for detailed design.
+See [LOW_LEVEL_DESIGN.MD](docs/LOW_LEVEL_DESIGN.MD) for detailed design.
 
 ---
 
@@ -427,11 +427,11 @@ After running `scripts/create-load-test-data.js`:
 Complete technical documentation in `/docs`:
 
 - [⚡ Quick Start Reference](QUICK_START.md) - One-page setup guide
-- [API Documentation](docs/API_DOCUMENTATION.md)
+- [API Documentation](docs/API_DOCUMENTATION.MD)
 - [DSA & Complexity Analysis](docs/DSA_AND_COMPLEXITY_ANALYSIS.md)
-- [Low Level Design](docs/LOW_LEVEL_DESIGN.md)
+- [Low Level Design](docs/LOW_LEVEL_DESIGN.MD)
 - [High Level Architecture](docs/HIGH_LEVEL_ARCHITECTURE.md)
-- [Concurrency Strategy](docs/CONCURRENCY_STRATEGY.md)
+- [Concurrency Strategy](docs/CONCURRENCY_STRATEGY.MD)
 - [Dynamic Pricing](docs/DYNAMIC_PRICING.md)
 - [Performance Report](docs/PERFORMANCE_REPORT.md)
 

@@ -1,5 +1,5 @@
 
-# Concurrency Strategy & Race Condition Prevention
+# |Concurrency Strategy & Race Condition Prevention|
 
 ---
 

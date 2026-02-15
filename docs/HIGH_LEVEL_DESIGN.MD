@@ -1,4 +1,4 @@
-# High Level Architecture (HLA)
+# |High Level Architecture (HLA)|
 
 ## Table of Contents
 1. [System Overview](#system-overview)
