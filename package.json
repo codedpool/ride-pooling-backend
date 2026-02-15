@@ -1,13 +1,42 @@
 {
   "name": "airport-ride-pooling",
   "version": "1.0.0",
-  "description": "Smart Airport Ride Pooling Backend System",
+  "description": "High-performance airport ride pooling backend system supporting 10,000+ concurrent users with zero double-bookings",
   "main": "src/app.js",
+  "author": "Romanch Roshan Singh",
+  "license": "MIT",
+  "keywords": [
+    "ride-pooling",
+    "airport",
+    "backend",
+    "nodejs",
+    "express",
+    "postgresql",
+    "postgis",
+    "concurrency",
+    "performance"
+  ],
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    "seed": "node scripts/seed.js",
-    "test": "node tests/concurrency.test.js"
+    "seed": "node scripts/create-load-test-data.js",
+    "test": "node tests/concurrency.test.js",
+    "test:load": "node scripts/load-test.js",
+    "test:realistic": "node scripts/realistic-load-test.js",
+    "test:scenarios": "node scripts/scenario-tests.js",
+    "test:edge": "node scripts/edge-case-tests.js",
+    "test:all": "node scripts/run-all-tests.js",
+    "db:init": "docker exec -i ride_pooling_db psql -U pooluser -d ridepooling < scripts/init.sql",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:restart": "docker-compose restart",
+    "docker:logs": "docker-compose logs -f",
+    "setup": "npm install && npm run docker:up && sleep 20 && npm run db:init && npm run seed",
+    "clean": "docker-compose down -v && rm -rf node_modules"
   },
   "dependencies": {
     "axios": "^1.13.5",
@@ -18,11 +47,20 @@
     "morgan": "^1.10.0",
     "pg": "^8.11.3",
     "redis": "^4.6.10",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "winston": "^3.11.0"
   },
   "devDependencies": {
     "autocannon": "^8.0.0",
     "clinic": "^13.0.0",
     "nodemon": "^3.0.1"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/airport-ride-pooling"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/airport-ride-pooling/issues"
+  },
+  "homepage": "https://github.com/yourusername/airport-ride-pooling#readme"
 }

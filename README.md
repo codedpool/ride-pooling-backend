@@ -111,50 +111,63 @@ ride-pooling-backend/
 
 ## 🚀 Quick Start
 
-### Prerequisites
-
-- **Node.js** 22.x or higher ([Download](https://nodejs.org/))
-- **Docker** & **Docker Compose** ([Download](https://www.docker.com/))
-- **Git** ([Download](https://git-scm.com/))
-
-### Installation
+### One-Command Setup
 
 ```bash
-# 1. Clone repository
-git clone https://github.com/yourusername/ride-pooling-backend.git
-cd ride-pooling-backend
+# Complete setup (install, start DB, initialize schema, seed data)
+npm run setup
+```
 
-# 2. Install dependencies
+### Manual Setup
+
+```bash
+# 1. Install dependencies
 npm install
 
-# 3. Start database containers
-docker-compose up -d postgres redis
+# 2. Start database
+npm run docker:up
 
-# Wait for database to be ready (15-20 seconds)
+# Wait 20 seconds for DB to be ready
 sleep 20
 
-# 4. Copy environment file
-cp .env.example .env
+# 3. Initialize database schema
+npm run db:init
 
-# 5. Initialize database (run SQL schema)
-docker exec -i ride_pooling_db psql -U pooluser -d ridepooling < scripts/init.sql
+# 4. Seed test data
+npm run seed
 
-# 6. Seed test data (200 rides, 20 cabs)
-node scripts/create-load-test-data.js
-
-# 7. Start the server
+# 5. Start server
 npm run dev
-# Server will start at: http://localhost:3000
+```
+
+### Testing
+
+```bash
+# Run all tests
+npm run test:all
+
+# Or run individual tests
+npm run test:load        # Basic load test (50 concurrent)
+npm run test:realistic   # Realistic scenarios
+npm run test:scenarios   # Functional tests
+npm run test:edge        # Edge case tests
+```
+
+### Docker Commands
+
+```bash
+npm run docker:up        # Start containers
+npm run docker:down      # Stop containers
+npm run docker:restart   # Restart containers
+npm run docker:logs      # View logs
 ```
 
 ---
 
-## 🧪 Testing
-
-### Manual Testing
+## 🧪 API Testing
 
 ```bash
-# Test health endpoint
+# Health check
 curl http://localhost:3000/health
 
 # Book a ride
@@ -171,18 +184,6 @@ curl -X POST http://localhost:3000/api/rides/book \
 
 # Get all active rides
 curl http://localhost:3000/api/rides
-```
-
-### Load Testing
-
-```bash
-# Run performance test (50 concurrent users, 30 seconds)
-node scripts/load-test.js
-
-# Expected results:
-# - Throughput: 500+ req/s
-# - Latency: <100ms avg
-# - Error rate: 0%
 ```
 
 ---
@@ -414,6 +415,7 @@ After running `scripts/create-load-test-data.js`:
 
 Complete technical documentation in `/docs`:
 
+- [⚡ Quick Start Reference](QUICK_START.md) - One-page setup guide
 - [API Documentation](docs/API_DOCUMENTATION.md)
 - [DSA & Complexity Analysis](docs/DSA_AND_COMPLEXITY_ANALYSIS.md)
 - [Low Level Design](docs/LOW_LEVEL_DESIGN.md)
