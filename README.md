@@ -65,6 +65,29 @@ A production-ready backend API for airport ride pooling that:
 
 ```
 ride-pooling-backend/
+├── db/
+│   └── migrations/
+│       └── add_indexes.sql
+├── docs/
+│   ├── API_DOCUMENTATION.md
+│   ├── CONCURRENCY_STRATEGY.md
+│   ├── DSA_AND_COMPLEXITY_ANALYSIS.md
+│   ├── DYNAMIC_PRICING.md
+│   ├── HIGH_LEVEL_DESIGN.md
+│   ├── LOW_LEVEL_DESIGN.md
+│   └── PERFORMANCE_REPORT.md
+├── postman/
+│   └── ride-pooling.postman_collection.json
+├── scripts/
+│   ├── create-load-test-data.js
+│   ├── create-realistic-rides.js
+│   ├── edge-case-tests.js
+│   ├── init.sql
+│   ├── load-test.js
+│   ├── realistic-load-test.js
+│   ├── run-all-tests.js
+│   ├── scenario-tests.js
+│   └── seed.js
 ├── src/
 │   ├── app.js
 │   ├── config/
@@ -84,7 +107,8 @@ ride-pooling-backend/
 │   │   └── User.js
 │   ├── routes/
 │   │   ├── cabRoutes.js
-│   │   └── rideRoutes.js
+│   │   ├── rideRoutes.js
+│   │   └── testRoutes.js
 │   ├── services/
 │   │   ├── concurrencyService.js
 │   │   ├── matchingService.js
@@ -92,30 +116,17 @@ ride-pooling-backend/
 │   └── utils/
 │       ├── geoUtils.js
 │       └── logger.js
-├── scripts/
-│   ├── create-load-test-data.js
-│   ├── create-realistic-rides.js
-│   ├── edge-case-tests.js
-│   ├── init.sql
-│   ├── load-test.js
-│   ├── realistic-load-test.js
-│   ├── run-all-tests.js
-│   ├── scenario-tests.js
-│   └── seed.js
-├── docs/
-│   ├── API_DOCUMENTATION.MD
-│   ├── CONCURRENCY_STRATEGY.MD
-│   ├── DSA_AND_COMPLEXITY_ANALYSIS.md
-│   ├── DYNAMIC_PRICING.md
-│   ├── HIGH_LEVEL_DESIGN.MD
-│   ├── LOW_LEVEL_DESIGN.MD
-│   └── PERFORMANCE_REPORT.md
-├── docker-compose.yml
+├── tests/
+│   └── concurrency.test.js
+├── .env
 ├── .env.example
 ├── .gitignore
+├── docker-compose.yml
+├── Dockerfile
 ├── package.json
-├── README.md
-└── QUICK_START.md
+├── package-lock.json
+├── QUICK_START.md
+└── README.md
 ```
 
 ---
@@ -200,7 +211,7 @@ bash
    - Get Cab by ID
    - Update Cab Location
 
-**Full API documentation:** [API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md)
+**Full API documentation:** [API_DOCUMENTATION.MD](docs/API_DOCUMENTATION.md)
 
 ---
 
