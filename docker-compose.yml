@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgis/postgis:15-3.3
+    container_name: ride_pooling_db
+    environment:
+      POSTGRES_USER: pooluser
+      POSTGRES_PASSWORD: poolpass
+      POSTGRES_DB: ridepooling
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    container_name: ride_pooling_redis
+    ports:
+      - "6379:6379"
+    restart: always
+
+  app:
+    build: .
+    container_name: ride_pooling_app
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://pooluser:poolpass@postgres:5432/ridepooling
+      REDIS_URL: redis://redis:6379
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+      - redis
+    restart: always
+    command: npm start
+
+volumes:
+  postgres_data:
