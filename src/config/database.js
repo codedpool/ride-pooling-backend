@@ -3,21 +3,30 @@ require('dotenv').config();
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' || process.env.DATABASE_URL.includes('neon.tech') 
-    ? { rejectUnauthorized: false } 
-    : false,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  ssl: { rejectUnauthorized: false },
+  max: 20,                      // Max connections
+  min: 2,                        // Keep 2 connections warm
+  idleTimeoutMillis: 30000,      // Close idle connections after 30s
+  connectionTimeoutMillis: 5000, // Timeout if can't get connection
+  statement_timeout: 10000       // Query timeout
+});
+
+pool.on('connect', () => {
+  console.log('🔗 New database connection established');
 });
 
 pool.on('error', (err) => {
-  console.error('Unexpected database error:', err);
-  process.exit(-1);
+  console.error('❌ Unexpected database error:', err);
 });
 
-module.exports = {
-  query: (text, params) => pool.query(text, params),
-  getClient: () => pool.connect(),
-  pool
-};
+async function query(text, params) {
+  return pool.query(text, params);
+}
+
+async function getClient() {
+  return pool.connect();
+}
+
+console.log('✅ Database pool configured (max: 20 connections)');
+
+module.exports = { query, getClient };

@@ -4,21 +4,14 @@ const Booking = require('../models/Booking');
 const logger = require('../utils/logger');
 
 class ConcurrencyService {
-  /**
-   * Book a ride with proper locking to prevent race conditions
-   * Uses PostgreSQL row-level locking (SELECT ... FOR UPDATE)
-   */
   static async bookRideWithLock(userId, rideId, pickupLat, pickupLon, dropoffLat, dropoffLon, luggageCount, fare, detourDistance) {
     const client = await db.getClient();
 
     try {
-      // Start transaction
       await client.query('BEGIN');
 
-      // Lock and update ride (this prevents concurrent bookings)
       const updatedRide = await Ride.lockAndUpdate(rideId, 1, luggageCount, client);
 
-      // Create booking
       const bookingQuery = `
         INSERT INTO bookings (user_id, ride_id, pickup_location, dropoff_location, luggage_count, fare, detour_distance, status)
         VALUES ($1, $2, 
@@ -38,7 +31,6 @@ class ConcurrencyService {
         luggageCount, fare, detourDistance
       ]);
 
-      // Commit transaction
       await client.query('COMMIT');
 
       logger.info('Booking successful with lock', {
@@ -53,26 +45,20 @@ class ConcurrencyService {
       };
 
     } catch (error) {
-      // Rollback on error
       await client.query('ROLLBACK');
       logger.error('Booking failed, transaction rolled back', error);
       throw error;
     } finally {
-      // Release client back to pool
       client.release();
     }
   }
 
-  /**
-   * Cancel a booking and restore ride capacity
-   */
   static async cancelBooking(bookingId) {
     const client = await db.getClient();
 
     try {
       await client.query('BEGIN');
 
-      // Get booking details
       const booking = await Booking.findById(bookingId);
       if (!booking) {
         throw new Error('Booking not found');
@@ -82,7 +68,6 @@ class ConcurrencyService {
         throw new Error('Booking already cancelled');
       }
 
-      // Lock ride and restore capacity
       const restoreQuery = `
         UPDATE rides
         SET available_seats = available_seats + 1,
@@ -93,7 +78,6 @@ class ConcurrencyService {
       `;
       await client.query(restoreQuery, [booking.ride_id, booking.luggage_count]);
 
-      // Cancel booking
       const cancelQuery = `
         UPDATE bookings
         SET status = 'cancelled', updated_at = NOW()
@@ -113,7 +97,7 @@ class ConcurrencyService {
       logger.error('Cancellation failed', error);
       throw error;
     } finally {
-      client.release();
+      await client.end(); // Changed from client.release()
     }
   }
 }

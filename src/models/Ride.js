@@ -18,7 +18,7 @@ class Ride {
     return result.rows[0];
   }
 
-  static async findActiveRides() {
+   static async findActiveRides() {
     const query = `
       SELECT r.*, 
              c.driver_name, c.vehicle_number,
@@ -29,9 +29,17 @@ class Ride {
       WHERE r.status = 'active' AND r.available_seats > 0
       ORDER BY r.created_at DESC
     `;
-    const result = await db.query(query);
-    return result.rows;
+    
+    try {
+      const result = await db.query(query);
+      console.log(`✅ Found ${result.rows.length} active rides`);
+      return result.rows;
+    } catch (error) {
+      console.error('❌ Error fetching rides:', error.message);
+      throw error;
+    }
   }
+
 
   static async lockAndUpdate(rideId, seatsToBook, luggageToBook, client) {
     // Lock the row for update (prevents race conditions)
