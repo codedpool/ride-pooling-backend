@@ -211,7 +211,7 @@ bash
    - Get Cab by ID
    - Update Cab Location
 
-**Full API documentation:** [API_DOCUMENTATION.MD](docs/API_DOCUMENTATION.md)
+**Full API documentation:** [API_DOCUMENTATION.MD](docs/API_DOCUMENTATION.MD)
 
 ---
 
