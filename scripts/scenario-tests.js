@@ -53,15 +53,15 @@ const scenarios = {
 
   // 3. Long distance booking
   async longDistance() {
-    console.log('\n🧪 Test 3: Long Distance (30km)');
+    console.log('\n🧪 Test 3: Long Distance\n');
     try {
       const response = await axios.post(`${API_BASE}/rides/book`, {
-        userId: USER_ID,
-        pickupLat: 28.5565,
-        pickupLon: 77.1005,
-        dropoffLat: 28.7041,
-        dropoffLon: 77.1025,
-        luggageCount: 2
+        userId: '452ef1bf-8064-4882-8071-c85cc4d3cb65',
+        pickupLat: 28.5000,  
+        pickupLon: 77.0500,   
+        dropoffLat: 28.6565,
+        dropoffLon: 77.2005,
+        luggageCount: 1
       });
       
       console.log(`  ✅ Status: ${response.status}`);
@@ -89,7 +89,7 @@ const scenarios = {
       
       console.log(`  ✅ Status: ${response.status}`);
       console.log(`  ✅ Luggage: ${response.data.data.booking.luggage_count} bags`);
-      console.log(`  ✅ Available luggage after: ${response.data.data.ride.available_luggage}`);
+      console.log(`  ✅ Available luggage after: ${response.data.data.ride.availableLuggage}`);
       return response.data.data;
     } catch (error) {
       console.log(`  ❌ Failed: ${error.response?.data?.error || error.message}`);
@@ -104,8 +104,8 @@ const scenarios = {
       const response = await axios.get(`${API_BASE}/rides/booking/${bookingId}`);
       
       console.log(`  ✅ Status: ${response.status}`);
-      console.log(`  ✅ Booking Status: ${response.data.data.status}`);
-      console.log(`  ✅ Fare: ₹${response.data.data.fare}`);
+      console.log(`  ✅ Booking Status: ${response.data.data.booking.status}`);
+      console.log(`  ✅ Fare: ₹${response.data.data.booking.fare}`);
       return response.data.data;
     } catch (error) {
       console.log(`  ❌ Failed: ${error.response?.data?.error || error.message}`);

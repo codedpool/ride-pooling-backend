@@ -175,7 +175,36 @@ npm run docker:logs      # View logs
 
 ---
 
+bash
+
 ## 🧪 API Testing
+
+### 🚦 Quick Start
+
+**Recommended:** Use the provided Postman collection for easy, interactive API testing.
+
+#### 1. Postman (Recommended)
+
+**Import the collection:**
+1. Open Postman
+2. Click **Import** → **Upload Files**
+3. Select `postman/ride-pooling.postman_collection.json`
+
+**Test endpoints include:**
+   - Health Check
+   - Book Ride
+   - Get Booking Status
+   - Cancel Booking
+   - Get All Active Rides
+   - Get All Cabs
+   - Get Cab by ID
+   - Update Cab Location
+
+**Full API documentation:** [API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md)
+
+---
+
+#### 2. cURL (Quick Testing)
 
 ```bash
 # Health check
@@ -183,15 +212,15 @@ curl http://localhost:3000/health
 
 # Book a ride
 curl -X POST http://localhost:3000/api/rides/book \
-  -H "Content-Type: application/json" \
-  -d '{
-    "userId": "452ef1bf-8064-4882-8071-c85cc4d3cb63",
-    "pickupLat": 28.5565,
-    "pickupLon": 77.1005,
-    "dropoffLat": 28.6565,
-    "dropoffLon": 77.2005,
-    "luggageCount": 1
-  }'
+   -H "Content-Type: application/json" \
+   -d '{
+      "userId": "452ef1bf-8064-4882-8071-c85cc4d3cb63",
+      "pickupLat": 28.5565,
+      "pickupLon": 77.1005,
+      "dropoffLat": 28.6565,
+      "dropoffLon": 77.2005,
+      "luggageCount": 1
+   }'
 
 # Get all active rides
 curl http://localhost:3000/api/rides
@@ -199,13 +228,7 @@ curl http://localhost:3000/api/rides
 
 ---
 
-## 📚 API Documentation
-
-See [API_DOCUMENTATION.MD](docs/API_DOCUMENTATION.MD) for detailed endpoint specifications.
-
----
-
-## Quick Reference
+### 📋 Quick Reference
 
 | Method | Endpoint                  | Description         |
 |--------|---------------------------|---------------------|
