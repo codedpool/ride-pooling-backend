@@ -1,0 +1,37 @@
+# Render Blueprint — deploys the Dispatch console + API as one web service.
+# In Render: New → Blueprint → point at this repo. It provisions the web
+# service and a PostgreSQL database and wires DATABASE_URL automatically.
+#
+# IMPORTANT: after the database is live, run scripts/init.sql against it ONCE
+# (it enables PostGIS + creates the tables). See DEPLOY.md for the command.
+
+services:
+  - type: web
+    name: dispatch-ride-pooling
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ridepooling-db
+          property: connectionString
+      # Optional tuning (defaults shown) — uncomment to override:
+      # - key: MAX_DETOUR_PERCENT
+      #   value: "30"
+      # - key: MAX_SEARCH_RADIUS
+      #   value: "10"
+      # - key: BASE_FARE
+      #   value: "50"
+      # - key: PER_KM_RATE
+      #   value: "10"
+
+databases:
+  - name: ridepooling-db
+    plan: free
+    postgresMajorVersion: "16"

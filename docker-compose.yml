@@ -5,8 +5,8 @@ services:
     image: postgis/postgis:15-3.3
     container_name: ride_pooling_db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
+      POSTGRES_USER: pooluser
+      POSTGRES_PASSWORD: poolpass
       POSTGRES_DB: ridepooling
     ports:
       - "5433:5432"  # Changed to 5433 to avoid conflict with your pgAdmin PostgreSQL

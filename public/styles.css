@@ -1,0 +1,331 @@
+/* ============================================================
+   DISPATCH — IGI ground-operations console
+   Airport instrument: hairline zones, radar scope, FIDS board.
+   ============================================================ */
+:root{
+  --apron:#0b0d0c;        /* night apron / scope base */
+  --apron-2:#101312;      /* zone surface */
+  --apron-3:#151918;      /* raised surface */
+  --line:rgba(150,180,165,.12);
+  --line-2:rgba(150,180,165,.22);
+  --fids:#e8ede9;         /* board text */
+  --muted:#828d86;
+  --dim:#525c56;
+
+  --taxi:#ffb000;         /* taxiway-sign amber — primary */
+  --taxi-soft:#ffc94d;
+  --phosphor:#41e0a3;     /* radar phosphor — live / pass */
+  --phosphor-dim:rgba(65,224,163,.14);
+  --runway:#ff4d4d;       /* mandatory red — reject / fail */
+
+  --rad:3px;
+  --disp:'Saira Condensed',sans-serif;
+  --body:'Archivo',system-ui,sans-serif;
+  --mono:'Spline Sans Mono',ui-monospace,monospace;
+
+  --rail-w:300px;
+  --side-w:300px;
+  --deck-h:clamp(620px,82vh,880px);
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--apron); color:var(--fids);
+  font-family:var(--body); line-height:1.5; -webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(ellipse 70% 50% at 50% -10%,rgba(65,224,163,.06),transparent 70%);
+}
+
+/* ---------- frame ---------- */
+.frame{
+  max-width:1360px; margin:0 auto; padding:18px;
+}
+
+/* operations instrument fills the first screen; board follows on scroll */
+.ops{
+  min-height:calc(100vh - 36px);
+  display:flex; flex-direction:column;
+}
+
+/* ---------- HUD header ---------- */
+.hud{
+  display:flex; align-items:stretch; justify-content:space-between; gap:18px;
+  border:1px solid var(--line-2); background:var(--apron-2);
+  border-radius:var(--rad) var(--rad) 0 0;
+}
+.hud-id{display:flex; align-items:center; gap:13px; padding:14px 20px; border-right:1px solid var(--line)}
+.hud-mark{color:var(--phosphor); flex-shrink:0}
+.hud-name{display:flex; flex-direction:column; line-height:1}
+.hud-word{font-family:var(--disp); font-weight:700; font-size:24px; letter-spacing:.14em}
+.hud-code{font-family:var(--mono); font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--dim); margin-top:4px}
+
+.hud-readout{display:flex; flex:1; justify-content:flex-end}
+.cell{
+  display:flex; flex-direction:column; justify-content:center; gap:3px;
+  padding:12px 18px; min-width:96px; border-left:1px solid var(--line);
+}
+.cell .cl{font-family:var(--mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--dim)}
+.cell .cv{font-family:var(--disp); font-weight:600; font-size:24px; letter-spacing:.02em; color:var(--fids); display:flex; align-items:center; gap:8px}
+.cell .cv.mono{font-family:var(--mono); font-size:16px; font-weight:500}
+.cell.engine .cv{font-family:var(--mono); font-size:13px; font-weight:500; text-transform:lowercase}
+.led{width:8px; height:8px; border-radius:50%; background:var(--dim); flex-shrink:0}
+.cell.engine.online .led{background:var(--phosphor); box-shadow:0 0 8px var(--phosphor); animation:beacon 2s infinite}
+.cell.engine.offline .led{background:var(--runway); box-shadow:0 0 8px var(--runway)}
+@keyframes beacon{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* ============================================================
+   OPERATIONS DECK — one instrument, hairline-divided columns
+   ============================================================ */
+.deck{
+  display:flex;                    /* flex row: only the rail drives the height */
+  flex:1;                          /* fill the viewport; grow to the rail if shorter */
+  border:1px solid var(--line-2); border-top:none;
+  background:var(--apron-2);
+  overflow:hidden;
+}
+/* rail is never scrollable — its content sets the deck height */
+.rail{width:var(--rail-w); flex:none; border-right:1px solid var(--line); display:flex; flex-direction:column}
+.scope{flex:1; min-width:0; min-height:0}
+/* side is a fixed box: overflow:hidden + min-height:0 means the event log scrolls
+   inside it and can never expand the deck */
+.side{width:var(--side-w); flex:none; min-height:0; overflow:hidden; border-left:1px solid var(--line); display:flex; flex-direction:column}
+
+/* control groups stacked behind shared hairlines (not cards) */
+.ctrl{padding:14px 20px; border-bottom:1px solid var(--line)}
+.ctrl:last-child{border-bottom:none; flex:1}
+
+/* taxiway-style sign label */
+.sign{
+  display:inline-block; font-family:var(--disp); font-weight:600; font-size:13px;
+  letter-spacing:.18em; color:var(--taxi);
+  background:#000; border:1px solid rgba(255,176,0,.5); border-radius:2px;
+  padding:3px 10px 2px; margin-bottom:10px;
+  box-shadow:inset 0 0 0 1px rgba(255,176,0,.12);
+}
+.sign.warn{color:var(--runway); border-color:rgba(255,77,77,.5); box-shadow:inset 0 0 0 1px rgba(255,77,77,.12)}
+
+.lede{color:var(--muted); font-size:12.5px; margin:0 0 11px}
+.lede b{color:var(--fids); font-weight:600}
+.fleet-note{font-family:var(--mono); font-size:10.5px; letter-spacing:.04em; color:var(--dim); margin:10px 0 0; text-transform:uppercase}
+
+/* fields */
+.inline{display:flex; gap:12px; align-items:flex-end; margin-bottom:10px}
+.stack{display:flex; flex-direction:column; gap:10px; margin-bottom:10px}
+.field{display:flex; flex-direction:column; gap:6px; flex:1; min-width:0}
+.field.slide{margin-bottom:10px}
+.field>span{font-family:var(--mono); font-size:10px; letter-spacing:.13em; text-transform:uppercase; color:var(--muted)}
+.field>span b{color:var(--taxi); font-weight:600}
+input[type=number],select{
+  width:100%; font-family:var(--mono); font-size:13px; color:var(--fids);
+  background:var(--apron); border:1px solid var(--line-2); border-radius:2px;
+  padding:9px 10px; outline:none; appearance:none; transition:border-color .15s,box-shadow .15s;
+}
+select{cursor:pointer; padding-right:28px;
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 15px) 16px,calc(100% - 10px) 16px; background-size:5px 5px; background-repeat:no-repeat}
+input[type=number]:focus,select:focus{border-color:var(--taxi); box-shadow:0 0 0 2px rgba(255,176,0,.16)}
+option{background:var(--apron-3); color:var(--fids)}
+
+input[type=range]{-webkit-appearance:none; appearance:none; width:100%; height:3px; background:var(--line-2); outline:none; cursor:pointer; border-radius:0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:14px; height:14px; background:var(--taxi); border:none; border-radius:1px; box-shadow:0 0 8px rgba(255,176,0,.5); transition:transform .1s}
+input[type=range]::-webkit-slider-thumb:hover{transform:scaleY(1.3)}
+input[type=range]::-moz-range-thumb{width:13px; height:13px; background:var(--taxi); border:none; border-radius:1px}
+
+/* buttons */
+.btn{
+  font-family:var(--disp); font-weight:600; font-size:14px; letter-spacing:.06em; text-transform:uppercase;
+  border:1px solid transparent; border-radius:2px; cursor:pointer; padding:10px 16px;
+  display:inline-flex; align-items:center; justify-content:center; gap:7px; white-space:nowrap;
+  transition:background .15s,border-color .15s,box-shadow .15s,opacity .15s,transform .1s;
+}
+.btn:active{transform:translateY(1px)}
+.btn.solid{color:#1a1200; background:var(--taxi); box-shadow:0 0 0 1px rgba(255,176,0,.3),0 6px 18px -10px rgba(255,176,0,.6)}
+.btn.solid:hover{background:var(--taxi-soft); box-shadow:0 0 0 1px rgba(255,176,0,.5),0 8px 22px -10px rgba(255,176,0,.8)}
+.btn.line{background:transparent; border-color:var(--line-2); color:var(--fids)}
+.btn.line:hover{border-color:var(--muted); background:rgba(255,255,255,.03)}
+.btn.danger{color:var(--runway); border-color:rgba(255,77,77,.35)}
+.btn.danger:hover{background:rgba(255,77,77,.08); border-color:rgba(255,77,77,.55)}
+.btn.wide{width:100%}
+.btn.sm{padding:8px 12px; font-size:12px; width:100%; margin-top:10px}
+.btn.xl{padding:14px 24px; font-size:16px}
+.btn[disabled]{opacity:.45; cursor:not-allowed; transform:none}
+.btn.busy{position:relative; color:transparent !important}
+.btn.busy::after{content:""; position:absolute; width:15px; height:15px; border:2px solid rgba(0,0,0,.3); border-top-color:#1a1200; border-radius:50%; animation:spin .7s linear infinite}
+.btn.line.busy::after,.btn.danger.busy::after{border-color:rgba(255,255,255,.25); border-top-color:var(--fids)}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---------- radar scope ---------- */
+.scope{display:flex; flex-direction:column; min-width:0}
+.zone-bar{
+  display:flex; align-items:center; gap:12px; padding:10px 16px;
+  border-bottom:1px solid var(--line); flex-shrink:0;
+}
+.zone-tag{font-family:var(--mono); font-size:10px; letter-spacing:.2em; color:var(--taxi); text-transform:uppercase}
+.zone-meta{font-family:var(--mono); font-size:10.5px; color:var(--dim); letter-spacing:.05em}
+.zone-act{margin-left:auto; background:none; border:none; cursor:pointer; font-family:var(--mono); font-size:10.5px; color:var(--dim); text-transform:uppercase; letter-spacing:.1em}
+.zone-act:hover{color:var(--taxi)}
+.legend{margin-left:auto; font-family:var(--mono); font-size:10.5px; color:var(--muted); display:flex; align-items:center; gap:5px}
+.legend .lg{width:7px; height:7px; border-radius:50%; display:inline-block; margin-left:8px}
+.legend .lg.ph{background:var(--phosphor)} .legend .lg.am{background:var(--taxi)} .legend .lg.rd{background:var(--runway)}
+
+.map-wrap{flex:1; min-height:0; display:flex; align-items:center; justify-content:center; padding:14px; background:
+  radial-gradient(circle at 50% 50%,rgba(65,224,163,.05),transparent 62%)}
+#radar{width:100%; height:100%; display:block}
+.r-grid{stroke:var(--line); stroke-width:1}
+.r-ring{fill:none; stroke:rgba(65,224,163,.16); stroke-width:1}
+.r-cross{stroke:rgba(65,224,163,.2); stroke-width:1}
+.r-tick{stroke:rgba(65,224,163,.28); stroke-width:1}
+.r-sweep{transform-box:view-box; animation:sweep 4.5s linear infinite}
+@keyframes sweep{to{transform:rotate(360deg)}}
+.r-cab{fill:var(--phosphor)}
+.r-cab-halo{fill:rgba(65,224,163,.10)}
+.r-route{stroke:var(--taxi); stroke-width:2; stroke-dasharray:5 5; fill:none; opacity:.95}
+.r-pickup{fill:var(--taxi)}
+.r-drop{fill:var(--runway)}
+.r-pulse{fill:none; stroke:var(--taxi); stroke-width:2; animation:ping 1.5s ease-out infinite}
+@keyframes ping{0%{r:6; opacity:.8}100%{r:24; opacity:0}}
+.r-label{fill:var(--dim); font-family:var(--mono); font-size:11px; letter-spacing:.04em}
+.r-empty{fill:var(--dim); font-family:var(--mono); font-size:12px; letter-spacing:.12em}
+
+/* ---------- telemetry side ---------- */
+/* the two right-side panels split the column 50/50, each a fixed box that
+   scrolls internally — content can never resize them or the deck */
+.readout-zone{display:flex; flex-direction:column; flex:1 1 0; min-height:0; overflow:hidden; border-bottom:1px solid var(--line)}
+.logzone{display:flex; flex-direction:column; flex:1 1 0; min-height:0; overflow:hidden}
+.zone-body{flex:1; min-height:0; overflow-y:auto; position:relative}
+
+.readout-idle{
+  position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:12px; color:var(--dim); text-align:center; padding:24px;
+}
+.readout-idle p{font-family:var(--mono); font-size:11.5px; line-height:1.7; margin:0; letter-spacing:.03em}
+.readout-zone:has(.result:not([hidden])) .readout-idle{display:none}
+
+/* result readouts (flat, sit inside the fixed zone) */
+.result{padding:14px 16px; animation:fadein .25s ease}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+.result-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px}
+.badge{font-family:var(--mono); font-size:10.5px; font-weight:600; letter-spacing:.12em; padding:3px 9px; border-radius:2px; background:var(--phosphor-dim); color:var(--phosphor); border:1px solid rgba(65,224,163,.3)}
+.badge.fail{background:rgba(255,77,77,.12); color:var(--runway); border-color:rgba(255,77,77,.3)}
+.result-time{font-family:var(--mono); font-size:11px; color:var(--dim)}
+.kv{display:flex; justify-content:space-between; gap:14px; padding:8px 0; border-bottom:1px solid var(--line); font-family:var(--mono); font-size:12.5px}
+.kv:last-child{border-bottom:none}
+.kv .k{color:var(--muted); text-transform:uppercase; font-size:10.5px; letter-spacing:.08em; align-self:center}
+.kv .v{color:var(--fids); text-align:right; font-weight:500}
+.kv .v.hot{color:var(--taxi)} .kv .v.good{color:var(--phosphor)}
+.result-foot{padding-top:12px}
+
+/* seat meter (race test) */
+.seat-meter{display:flex; flex-wrap:wrap; gap:5px; padding:16px 16px 10px}
+.seat{width:28px; height:28px; border-radius:2px; border:1px solid var(--line-2); display:flex; align-items:center; justify-content:center;
+  font-family:var(--mono); font-size:11px; color:var(--dim); background:var(--apron); transition:all .2s}
+.seat.win{background:var(--phosphor-dim); border-color:var(--phosphor); color:var(--phosphor)}
+.seat.lose{background:rgba(255,77,77,.08); border-color:rgba(255,77,77,.3); color:var(--runway)}
+.stress-stats{display:flex; gap:8px; padding:6px 16px 16px}
+.metric-chip{flex:1; text-align:center; padding:10px 6px; border:1px solid var(--line); border-radius:2px; font-family:var(--mono); background:var(--apron)}
+.metric-chip .n{display:block; font-family:var(--disp); font-size:24px; font-weight:600}
+.metric-chip .l{font-size:9px; text-transform:uppercase; letter-spacing:.1em; color:var(--dim)}
+.metric-chip.good .n{color:var(--phosphor)} .metric-chip.bad .n{color:var(--runway)} .metric-chip.neu .n{color:var(--fids)}
+
+/* ---------- terminal ---------- */
+.terminal{
+  flex:1; min-height:0; overflow-y:auto; font-family:var(--mono); font-size:12px; line-height:1.7;
+  padding:12px 16px; color:var(--muted); background:var(--apron);
+}
+.terminal .line{display:flex; gap:10px; white-space:pre-wrap; word-break:break-word}
+.terminal .t{color:var(--dim); flex-shrink:0}
+.terminal .msg{flex:1}
+.terminal .info .msg{color:#b9c2bc}
+.terminal .ok .msg{color:var(--phosphor)}
+.terminal .warn .msg{color:var(--taxi)}
+.terminal .err .msg{color:var(--runway)}
+.terminal .sys .msg{color:#7fb2cf}
+.terminal::-webkit-scrollbar,.rail::-webkit-scrollbar,.zone-body::-webkit-scrollbar,.fids::-webkit-scrollbar{width:7px}
+.terminal::-webkit-scrollbar-thumb,.rail::-webkit-scrollbar-thumb,.zone-body::-webkit-scrollbar-thumb,.fids::-webkit-scrollbar-thumb{background:var(--line-2); border-radius:0}
+
+/* ============================================================
+   SYSTEM CHECK — flight-information-display board
+   ============================================================ */
+.board{border:1px solid var(--line-2); border-top:none; border-radius:0 0 var(--rad) var(--rad); background:var(--apron-2)}
+.board-bar{display:flex; align-items:flex-end; justify-content:space-between; gap:24px; padding:22px 24px; border-bottom:1px solid var(--line)}
+.board-title h2{font-family:var(--disp); font-weight:600; font-size:clamp(22px,3vw,32px); letter-spacing:.01em; margin:8px 0 5px}
+.board-title p{color:var(--muted); font-size:13px; max-width:62ch; margin:0}
+
+.strip{display:grid; grid-template-columns:repeat(4,1fr); border-bottom:1px solid var(--line); animation:fadein .3s ease}
+.hl{padding:16px 20px; border-right:1px solid var(--line)}
+.hl:last-child{border-right:none}
+.hl .v{font-family:var(--disp); font-weight:600; font-size:30px; letter-spacing:.01em}
+.hl .l{font-family:var(--mono); font-size:9.5px; text-transform:uppercase; letter-spacing:.13em; color:var(--dim); margin-top:3px}
+.hl.good .v{color:var(--phosphor)} .hl.bad .v{color:var(--runway)} .hl.amber .v{color:var(--taxi)}
+
+.board-grid{display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr); height:404px}
+.fids{overflow-y:auto; border-right:1px solid var(--line)}
+.logzone.tall{min-height:0}
+.board-grid .logzone.tall{height:404px}
+
+/* FIDS rows — split-flap departures aesthetic */
+.frow{border-bottom:1px solid var(--line); transition:background .15s}
+.frow:hover{background:rgba(255,255,255,.015)}
+.frow-top{display:grid; grid-template-columns:96px 1fr auto 20px; align-items:center; gap:14px; padding:14px 20px; cursor:pointer}
+.flap{font-family:var(--mono); font-size:10px; font-weight:600; letter-spacing:.1em; padding:4px 0; text-align:center; border-radius:2px; background:#000; border:1px solid var(--line-2); color:var(--dim)}
+.flap.s-pass{color:var(--phosphor); border-color:rgba(65,224,163,.4); background:rgba(65,224,163,.06)}
+.flap.s-fail{color:var(--runway); border-color:rgba(255,77,77,.4); background:rgba(255,77,77,.06)}
+.flap.s-running{color:var(--taxi); border-color:rgba(255,176,0,.4); background:rgba(255,176,0,.06); animation:flapblink 1s steps(2) infinite}
+@keyframes flapblink{50%{opacity:.55}}
+.frow-name{font-family:var(--disp); font-size:18px; font-weight:500; letter-spacing:.01em}
+.frow-metric{font-family:var(--mono); font-size:12px; color:var(--muted)}
+.frow-caret{color:var(--dim); font-size:11px; transition:transform .2s; text-align:center}
+.frow.open .frow-caret{transform:rotate(90deg)}
+.frow-detail{max-height:0; overflow:hidden; transition:max-height .3s ease}
+.frow.open .frow-detail{max-height:260px}
+.frow-detail-in{padding:2px 20px 16px 130px; font-family:var(--mono); font-size:11.5px; color:var(--muted)}
+.frow-detail-in .dl{padding:4px 0; border-bottom:1px solid var(--line)}
+.frow-detail-in .dl:last-child{border:none}
+
+/* ---------- credits + toast ---------- */
+.credits{display:flex; justify-content:space-between; align-items:center; padding:18px 4px 0; font-family:var(--mono); font-size:11px; color:var(--muted); letter-spacing:.03em}
+.credits .dim{color:var(--dim)}
+
+.toast{
+  position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(16px);
+  background:var(--apron-3); border:1px solid var(--line-2); color:var(--fids);
+  padding:11px 18px; border-radius:2px; font-family:var(--mono); font-size:12.5px;
+  opacity:0; transition:opacity .2s,transform .2s; z-index:60; box-shadow:0 18px 40px -16px #000;
+}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+.toast.ok{border-color:rgba(65,224,163,.4)} .toast.err{border-color:rgba(255,77,77,.4)}
+
+/* ============================================================
+   RESPONSIVE — collapse the instrument below 1040px
+   ============================================================ */
+@media (max-width:1040px){
+  .ops{display:block; min-height:0}
+  .deck{flex-direction:column; flex:none; height:auto}
+  .rail,.side{width:auto}
+  .rail{border-right:none; border-bottom:1px solid var(--line); overflow:visible}
+  .side{border-left:none; border-top:1px solid var(--line); overflow:visible}
+  .scope{flex:none; min-height:440px}
+  .readout-zone{min-height:240px}
+  .logzone{min-height:200px}
+  .hud{flex-direction:column}
+  .hud-id{border-right:none; border-bottom:1px solid var(--line)}
+  .hud-readout{flex-wrap:wrap}
+  .cell{flex:1; min-width:33%; border-top:1px solid var(--line)}
+  .board-grid{grid-template-columns:1fr; height:auto}
+  .board-grid .logzone.tall{height:300px; border-top:1px solid var(--line)}
+  .fids{border-right:none; max-height:none}
+}
+@media (max-width:600px){
+  .frame{padding:10px}
+  .board-bar{flex-direction:column; align-items:flex-start}
+  .strip{grid-template-columns:1fr 1fr}
+  .hud-word{font-size:20px}
+  .cell .cv{font-size:20px}
+  .credits{flex-direction:column; gap:6px; text-align:center}
+  .frow-top{grid-template-columns:80px 1fr 20px}
+  .frow-metric{display:none}
+  .frow-detail-in{padding-left:20px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important; transition:none !important}
+}

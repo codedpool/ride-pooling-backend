@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DISPATCH — IGI ground operations</title>
+  <meta name="description" content="Ground-operations console for an airport ride-pooling backend: live matching, concurrency-safe booking, and an automated system check." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Archivo:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230c0e0d'/%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%2341e0a3' stroke-width='1.5' opacity='.5'/%3E%3Cline x1='16' y1='16' x2='25' y2='10' stroke='%23ffb000' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23ffb000'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="frame">
+
+    <!-- operations instrument fills the first screen -->
+    <section class="ops">
+
+    <!-- ───────────── HUD HEADER ───────────── -->
+    <header class="hud">
+      <div class="hud-id">
+        <svg class="hud-mark" viewBox="0 0 28 28" width="26" height="26" aria-hidden="true">
+          <circle cx="14" cy="14" r="11" fill="none" stroke="currentColor" stroke-width="1.3" opacity=".45"/>
+          <circle cx="14" cy="14" r="6"  fill="none" stroke="currentColor" stroke-width="1" opacity=".3"/>
+          <line x1="14" y1="14" x2="22" y2="8" stroke="var(--taxi)" stroke-width="2"/>
+          <circle cx="14" cy="14" r="1.8" fill="var(--taxi)"/>
+        </svg>
+        <div class="hud-name">
+          <span class="hud-word">DISPATCH</span>
+          <span class="hud-code">DEL · IGI ground ops</span>
+        </div>
+      </div>
+
+      <div class="hud-readout">
+        <div class="cell"><span class="cl">active rides</span><span class="cv" id="mRides">0</span></div>
+        <div class="cell"><span class="cl">cabs</span><span class="cv" id="mCabs">0</span></div>
+        <div class="cell"><span class="cl">bookings</span><span class="cv" id="mBookings">0</span></div>
+        <div class="cell engine" id="apiPill"><span class="cl">engine</span><span class="cv"><i class="led" id="apiDot"></i><span id="apiLabel">linking…</span></span></div>
+        <div class="cell"><span class="cl">db</span><span class="cv" id="dbLatency">—</span></div>
+        <div class="cell"><span class="cl">local</span><span class="cv mono" id="clock">—</span></div>
+      </div>
+    </header>
+
+    <!-- ───────────── OPERATIONS DECK ───────────── -->
+    <section class="deck">
+
+      <!-- control rail -->
+      <aside class="rail">
+        <div class="ctrl">
+          <div class="sign">FLEET</div>
+          <p class="lede">Put cabs on the apron. Each one broadcasts an active ride toward the city.</p>
+          <div class="inline">
+            <label class="field">
+              <span>fleet size</span>
+              <input type="number" id="fleetCount" min="1" max="60" value="14" />
+            </label>
+            <button class="btn solid" id="seedBtn"><span>Deploy fleet</span></button>
+          </div>
+          <button class="btn line danger sm" id="resetBtn">Clear the apron</button>
+          <p class="fleet-note" id="fleetNote">no cabs on the apron</p>
+        </div>
+
+        <div class="ctrl">
+          <div class="sign">DISPATCH</div>
+          <div class="stack">
+            <label class="field"><span>pickup</span><select id="pickupSel"></select></label>
+            <label class="field"><span>drop-off</span><select id="dropoffSel"></select></label>
+          </div>
+          <label class="field slide"><span>luggage <b id="lugVal">1</b></span>
+            <input type="range" id="luggage" min="0" max="6" value="1" /></label>
+          <button class="btn solid wide" id="bookBtn"><span>Match &amp; book</span></button>
+        </div>
+
+        <div class="ctrl">
+          <div class="sign warn">RACE TEST</div>
+          <p class="lede">Hit <b>one 4-seat cab</b> with many bookings at once. The row-lock must seat exactly four.</p>
+          <label class="field slide"><span>simultaneous <b id="concVal">10</b></span>
+            <input type="range" id="concurrency" min="2" max="40" value="10" /></label>
+          <button class="btn solid wide" id="stressBtn"><span>Fire simultaneous bookings</span></button>
+        </div>
+      </aside>
+
+      <!-- radar scope (signature) -->
+      <div class="scope">
+        <div class="zone-bar">
+          <span class="zone-tag">SCOPE</span>
+          <span class="zone-meta">IGI sector · 10&nbsp;km range</span>
+          <span class="legend"><i class="lg ph"></i>cab <i class="lg am"></i>pickup <i class="lg rd"></i>drop</span>
+        </div>
+        <div class="map-wrap">
+          <svg id="radar" viewBox="0 0 600 600" preserveAspectRatio="xMidYMid meet" aria-label="Fleet radar scope"></svg>
+        </div>
+      </div>
+
+      <!-- telemetry side -->
+      <aside class="side">
+        <div class="readout-zone">
+          <div class="zone-bar"><span class="zone-tag">READOUT</span><span class="zone-meta" id="readoutMeta">standby</span></div>
+          <div class="zone-body">
+            <div class="readout-idle" id="readoutIdle">
+              <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 17l6-10 5 8 2-3 3 5" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
+              <p>Awaiting dispatch.<br/>Match a ride or fire the race test.</p>
+            </div>
+
+            <div class="result" id="bookResult" hidden>
+              <div class="result-head"><span class="badge" id="bookBadge">MATCHED</span><span class="result-time" id="bookTime"></span></div>
+              <div class="readout" id="bookReadout"></div>
+              <div class="result-foot" id="bookFoot" hidden>
+                <button class="btn line danger sm" id="cancelBtn">Cancel booking &amp; return seat</button>
+              </div>
+            </div>
+
+            <div class="result" id="stressResult" hidden>
+              <div class="seat-meter" id="seatMeter"></div>
+              <div class="stress-stats" id="stressStats"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="logzone">
+          <div class="zone-bar"><span class="zone-tag">EVENT LOG</span><button class="zone-act" id="clearLog">clear</button></div>
+          <div class="terminal" id="log"></div>
+        </div>
+      </aside>
+    </section>
+    </section><!-- /ops -->
+
+    <!-- ───────────── SYSTEM CHECK BOARD ───────────── -->
+    <section class="board">
+      <div class="board-bar">
+        <div class="board-title">
+          <span class="zone-tag">SYSTEM CHECK</span>
+          <h2>Run the engine against itself</h2>
+          <p>Six checks against the live code paths — database, geo-math, pricing, matching, the concurrency lock, and throughput.</p>
+        </div>
+        <button class="btn solid xl" id="runAllBtn"><span>Run all checks ▸</span></button>
+      </div>
+
+      <div class="strip" id="headline" hidden></div>
+
+      <div class="board-grid">
+        <div class="fids" id="testBoard"></div>
+        <div class="logzone tall">
+          <div class="zone-bar"><span class="zone-tag">CHECK LOG</span></div>
+          <div class="terminal" id="suiteLog"></div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="credits">
+      <span>Node · Express · PostgreSQL · PostGIS · pessimistic row-locking</span>
+      <span class="dim">Romanch Roshan Singh</span>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+  <script src="/app.js"></script>
+</body>
+</html>
