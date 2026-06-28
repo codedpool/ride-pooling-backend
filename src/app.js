@@ -17,8 +17,14 @@ app.use(express.json());
 app.use(morgan('dev'));
 
 // Serve the interactive dispatch console (public/index.html) at the root URL.
+// Assets get a long cache; the HTML shell is always revalidated so deploys show up.
 const publicDir = path.join(__dirname, '..', 'public');
-app.use(express.static(publicDir));
+app.use(express.static(publicDir, {
+  index: 'index.html',
+  setHeaders(res, filePath) {
+    if (filePath.endsWith('index.html')) res.setHeader('Cache-Control', 'no-cache');
+  }
+}));
 
 app.get('/health', (req, res) => {
   res.json({
@@ -38,8 +44,15 @@ app.use('/api/rides', rideRoutes);
 app.use('/api/cabs', cabRoutes);
 app.use('/api/simulate', simulateRoutes);
 
-// Anything else falls back to the console UI.
-app.get('/', (req, res) => res.sendFile(path.join(publicDir, 'index.html')));
+// SPA fallback: any non-API page navigation returns the console, so refreshes
+// and unknown paths never 404. Real asset paths (with an extension) fall through
+// to a genuine 404 rather than being silently served HTML.
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api/') || req.path === '/health') return next();
+  if (path.extname(req.path)) return next();
+  res.setHeader('Cache-Control', 'no-cache');
+  res.sendFile(path.join(publicDir, 'index.html'));
+});
 
 app.use(errorHandler);
 
