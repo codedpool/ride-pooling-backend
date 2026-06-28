@@ -1,10 +1,23 @@
 const db = require('../config/database');
 const Ride = require('../models/Ride');
 const Booking = require('../models/Booking');
+const mem = require('../store/memoryStore');
+const { clearRidesCache } = require('../middleware/cacheMiddleware');
 const logger = require('../utils/logger');
 
 class ConcurrencyService {
   static async bookRideWithLock(userId, rideId, pickupLat, pickupLon, dropoffLat, dropoffLon, luggageCount, fare, detourDistance) {
+    if (db.usingMemory) {
+      const result = await mem.bookWithLock(
+        userId, rideId, pickupLat, pickupLon, dropoffLat, dropoffLon, luggageCount, fare, detourDistance
+      );
+      clearRidesCache();
+      logger.info('Booking successful (in-memory lock)', {
+        bookingId: result.booking.id, rideId, userId
+      });
+      return result;
+    }
+
     const client = await db.getClient();
 
     try {
@@ -54,6 +67,13 @@ class ConcurrencyService {
   }
 
   static async cancelBooking(bookingId) {
+    if (db.usingMemory) {
+      const cancelled = mem.cancelBooking(bookingId);
+      clearRidesCache();
+      logger.info('Booking cancelled (in-memory)', { bookingId, rideId: cancelled.ride_id });
+      return cancelled;
+    }
+
     const client = await db.getClient();
 
     try {

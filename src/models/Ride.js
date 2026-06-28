@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const mem = require('../store/memoryStore');
 const { getCachedRides, setCachedRides } = require('../middleware/cacheMiddleware');
 
 class Ride {
@@ -28,6 +29,7 @@ class Ride {
   }
 
   static async findById(id) {
+    if (db.usingMemory) return mem.findRideById(id);
     const query = 'SELECT * FROM rides WHERE id = $1';
     const result = await db.query(query, [id]);
     return result.rows[0];
@@ -37,8 +39,13 @@ class Ride {
     // Check cache first
     const cached = getCachedRides();
     if (cached) {
-      console.log(`🎯 Using cached rides (${cached.length} rides)`);
       return cached;
+    }
+
+    if (db.usingMemory) {
+      const rows = mem.findActiveRides();
+      setCachedRides(rows);
+      return rows;
     }
 
     const query = `

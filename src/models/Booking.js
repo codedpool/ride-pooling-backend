@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const mem = require('../store/memoryStore');
 
 class Booking {
   static async create(userId, rideId, pickupLat, pickupLon, dropoffLat, dropoffLon, luggageCount, fare, detourDistance) {
@@ -26,6 +27,7 @@ class Booking {
    * Find booking by ID
    */
   static async findById(id) {
+    if (db.usingMemory) return mem.findBookingById(id);
     const query = `
       SELECT * FROM bookings
       WHERE id = $1

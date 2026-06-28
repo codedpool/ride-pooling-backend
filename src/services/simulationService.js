@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const mem = require('../store/memoryStore');
 const { calculateDistance, calculateDetour } = require('../utils/geoUtils');
 const { clearRidesCache } = require('../middleware/cacheMiddleware');
 const MatchingService = require('./matchingService');
@@ -20,6 +21,10 @@ function rand(min, max) {
 
 /** Guarantee a stable demo rider exists so the UI can book without auth. */
 async function ensureDemoUser() {
+  if (db.usingMemory) {
+    mem.ensureUser(DEMO_USER_ID, { name: 'Demo Rider', email: 'demo-rider@dispatch.local', phone: '+910000000000' });
+    return DEMO_USER_ID;
+  }
   await db.query(
     `INSERT INTO users (id, name, email, phone)
      VALUES ($1, 'Demo Rider', 'demo-rider@dispatch.local', '+910000000000')
@@ -59,6 +64,13 @@ async function getContext() {
 
 /** Live snapshot used by the status pill + map refresh. */
 async function getStatus() {
+  if (db.usingMemory) {
+    const t0 = process.hrtime.bigint();
+    const c = mem.counts();
+    const dbLatencyMs = Number(process.hrtime.bigint() - t0) / 1e6;
+    return { ok: true, dbLatencyMs: parseFloat(dbLatencyMs.toFixed(2)), ...c };
+  }
+
   const t0 = process.hrtime.bigint();
   await db.query('SELECT 1');
   const dbLatencyMs = Number(process.hrtime.bigint() - t0) / 1e6;
@@ -81,8 +93,30 @@ async function getStatus() {
 /** Create `count` cabs, each broadcasting one active ride toward the city. */
 async function seedFleet(count = 14) {
   count = Math.max(1, Math.min(parseInt(count) || 14, 60));
-  const client = await db.getClient();
   const tag = Date.now().toString(36);
+
+  if (db.usingMemory) {
+    let created = 0;
+    for (let i = 0; i < count; i++) {
+      const cabLat = AIRPORT.lat + rand(-0.045, 0.045);
+      const cabLon = AIRPORT.lon + rand(-0.045, 0.045);
+      const cab = mem.createCab({ driverName: `Driver ${tag}-${i}`, vehicleNumber: `SIM-${tag}-${i}`, lat: cabLat, lon: cabLon });
+      mem.createRide({
+        cabId: cab.id,
+        seats: 2 + Math.floor(Math.random() * 3),
+        luggage: 2 + Math.floor(Math.random() * 3),
+        pickupLat: cabLat + rand(-0.008, 0.008),
+        pickupLon: cabLon + rand(-0.008, 0.008),
+        dropoffLat: CITY.lat + rand(-0.05, 0.05),
+        dropoffLon: CITY.lon + rand(-0.05, 0.05)
+      });
+      created++;
+    }
+    clearRidesCache();
+    return { created };
+  }
+
+  const client = await db.getClient();
   try {
     await client.query('BEGIN');
     let created = 0;
@@ -128,6 +162,12 @@ async function seedFleet(count = 14) {
 
 /** Clear the board: all bookings + rides, and any simulated cabs. */
 async function reset() {
+  if (db.usingMemory) {
+    mem.deleteAllRidesAndBookings();
+    const clearedCabs = mem.deleteSimCabs();
+    clearRidesCache();
+    return { clearedCabs };
+  }
   await db.query('DELETE FROM bookings');
   await db.query('DELETE FROM rides');
   const del = await db.query(`DELETE FROM cabs WHERE vehicle_number LIKE 'SIM-%' OR vehicle_number LIKE 'TEST-%'`);
@@ -144,23 +184,32 @@ async function stressTest(concurrency = 10) {
   const userId = await ensureDemoUser();
   const tag = Date.now().toString(36);
 
-  const cab = await db.query(
-    `INSERT INTO cabs (driver_name, vehicle_number, total_seats, total_luggage_capacity, current_location, status)
-     VALUES ('Race Test Driver', $1, 4, 4, ST_SetSRID(ST_MakePoint($2, $3), 4326), 'available')
-     RETURNING id`,
-    [`TEST-RACE-${tag}`, AIRPORT.lon, AIRPORT.lat]
-  );
-  const cabId = cab.rows[0].id;
-
-  const ride = await db.query(
-    `INSERT INTO rides
-       (cab_id, status, available_seats, available_luggage,
-        pickup_lat, pickup_lon, dropoff_lat, dropoff_lon, total_distance, current_fare)
-     VALUES ($1, 'active', 4, 4, $2, $3, $4, $5, 15.0, 200.0)
-     RETURNING id`,
-    [cabId, AIRPORT.lat, AIRPORT.lon, CITY.lat, CITY.lon]
-  );
-  const rideId = ride.rows[0].id;
+  let cabId, rideId;
+  if (db.usingMemory) {
+    const cab = mem.createCab({ driverName: 'Race Test Driver', vehicleNumber: `TEST-RACE-${tag}`, lat: AIRPORT.lat, lon: AIRPORT.lon });
+    cabId = cab.id;
+    rideId = mem.createRide({
+      cabId, seats: 4, luggage: 4,
+      pickupLat: AIRPORT.lat, pickupLon: AIRPORT.lon, dropoffLat: CITY.lat, dropoffLon: CITY.lon
+    }).id;
+  } else {
+    const cab = await db.query(
+      `INSERT INTO cabs (driver_name, vehicle_number, total_seats, total_luggage_capacity, current_location, status)
+       VALUES ('Race Test Driver', $1, 4, 4, ST_SetSRID(ST_MakePoint($2, $3), 4326), 'available')
+       RETURNING id`,
+      [`TEST-RACE-${tag}`, AIRPORT.lon, AIRPORT.lat]
+    );
+    cabId = cab.rows[0].id;
+    const ride = await db.query(
+      `INSERT INTO rides
+         (cab_id, status, available_seats, available_luggage,
+          pickup_lat, pickup_lon, dropoff_lat, dropoff_lon, total_distance, current_fare)
+       VALUES ($1, 'active', 4, 4, $2, $3, $4, $5, 15.0, 200.0)
+       RETURNING id`,
+      [cabId, AIRPORT.lat, AIRPORT.lon, CITY.lat, CITY.lon]
+    );
+    rideId = ride.rows[0].id;
+  }
 
   try {
     const attempts = Array.from({ length: concurrency }, () =>
@@ -172,9 +221,11 @@ async function stressTest(concurrency = 10) {
     const succeeded = results.filter(r => r.status === 'fulfilled').length;
     const rejected = concurrency - succeeded;
 
-    const finalRide = await db.query('SELECT available_seats, version FROM rides WHERE id = $1', [rideId]);
-    const finalSeats = finalRide.rows[0].available_seats;
-    const version = finalRide.rows[0].version;
+    const finalRide = db.usingMemory
+      ? mem.rideState(rideId)
+      : (await db.query('SELECT available_seats, version FROM rides WHERE id = $1', [rideId])).rows[0];
+    const finalSeats = finalRide.available_seats;
+    const version = finalRide.version;
 
     const doubleBookings = Math.max(0, succeeded - 4);
     const passed = doubleBookings === 0 && finalSeats === 4 - succeeded && finalSeats >= 0;
@@ -191,7 +242,8 @@ async function stressTest(concurrency = 10) {
     };
   } finally {
     // Cascade removes the test ride + its bookings.
-    await db.query('DELETE FROM cabs WHERE id = $1', [cabId]);
+    if (db.usingMemory) mem.deleteCab(cabId);
+    else await db.query('DELETE FROM cabs WHERE id = $1', [cabId]);
     clearRidesCache();
   }
 }
@@ -201,8 +253,10 @@ async function stressTest(concurrency = 10) {
 // ---------------------------------------------------------------------------
 
 async function ensureRidesExist(min = 6) {
-  const r = await db.query(`SELECT COUNT(*)::int AS n FROM rides WHERE status = 'active' AND available_seats > 0`);
-  if (r.rows[0].n < min) {
+  const n = db.usingMemory
+    ? mem.counts().activeRides
+    : (await db.query(`SELECT COUNT(*)::int AS n FROM rides WHERE status = 'active' AND available_seats > 0`)).rows[0].n;
+  if (n < min) {
     await seedFleet(Math.max(min, 12));
     return true;
   }
@@ -211,6 +265,19 @@ async function ensureRidesExist(min = 6) {
 
 async function testDatabase() {
   const logs = [];
+  if (db.usingMemory) {
+    const t0 = process.hrtime.bigint();
+    const c = mem.counts();
+    const latencyMs = parseFloat((Number(process.hrtime.bigint() - t0) / 1e6).toFixed(3));
+    logs.push('Running on the built-in in-memory store (no external database).');
+    logs.push(`State resets on restart · tracking ${c.cabs} cabs / ${c.activeRides} active rides.`);
+    logs.push(`Read latency: ${latencyMs}ms`);
+    return {
+      id: 'database', name: 'In-memory data store', status: 'pass',
+      metrics: { latencyMs, mode: 'in-memory' }, logs
+    };
+  }
+
   const t0 = process.hrtime.bigint();
   await db.query('SELECT 1');
   const latencyMs = parseFloat((Number(process.hrtime.bigint() - t0) / 1e6).toFixed(2));

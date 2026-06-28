@@ -1,7 +1,9 @@
 const db = require('../config/database');
+const mem = require('../store/memoryStore');
 
 class Cab {
     static async findAll() {
+      if (db.usingMemory) return mem.findAllCabs();
       const query = `
         SELECT id, driver_name, vehicle_number, total_seats, total_luggage_capacity,
                ST_X(current_location::geometry) as lon, 
@@ -14,19 +16,21 @@ class Cab {
       return result.rows;
     }
   static async create(driverName, vehicleNumber, lat, lon) {
+    if (db.usingMemory) return mem.createCab({ driverName, vehicleNumber, lat, lon });
     const query = `
       INSERT INTO cabs (driver_name, vehicle_number, current_location)
       VALUES ($1, $2, ST_SetSRID(ST_MakePoint($3, $4), 4326))
-      RETURNING id, driver_name, vehicle_number, total_seats, total_luggage_capacity, 
-                ST_X(current_location::geometry) as lon, 
+      RETURNING id, driver_name, vehicle_number, total_seats, total_luggage_capacity,
+                ST_X(current_location::geometry) as lon,
                 ST_Y(current_location::geometry) as lat,
-                is_active, created_at
+                created_at
     `;
     const result = await db.query(query, [driverName, vehicleNumber, lon, lat]);
     return result.rows[0];
   }
 
   static async findById(id) {
+    if (db.usingMemory) return mem.findCabById(id);
     const query = `
       SELECT id, driver_name, vehicle_number, total_seats, total_luggage_capacity,
              ST_X(current_location::geometry) as lon, 

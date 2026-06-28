@@ -400,6 +400,7 @@ function setRow(test, status) {
   const [cls, txt] = labels[status] || ['s-pending', 'QUEUED'];
   flap.className = `flap ${cls}`;
   flap.textContent = txt;
+  if (test.name) row.querySelector('.frow-name').textContent = test.name;
   if (status === 'pass' || status === 'fail') {
     row.querySelector('.frow-metric').textContent = metricSummary(test);
     row.querySelector('.frow-detail-in').innerHTML =
